@@ -1,0 +1,10 @@
+services:
+  app:
+    build: .
+    ports:
+      - "5120:5120"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped

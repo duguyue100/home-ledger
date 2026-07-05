@@ -1,0 +1,76 @@
+{
+  "nav": { "daily": "Daily", "dashboard": "Dashboard", "report": "Report", "settings": "Settings" },
+  "kind": {
+    "income": "Income",
+    "spending": "Spending",
+    "investment": "Investment",
+    "borrowing": "Borrowing"
+  },
+  "daily": {
+    "title": "Daily",
+    "filters": "Filters",
+    "quickAdd": "Quick add",
+    "date": "Date",
+    "kind": "Type",
+    "category": "Category",
+    "amount": "Amount",
+    "note": "Note",
+    "tag": "Tag",
+    "foreign": "Foreign currency",
+    "originalAmount": "Original amount",
+    "currency": "Currency",
+    "rate": "Rate (CHF per unit)",
+    "save": "Save",
+    "cancel": "Cancel",
+    "noTransactions": "No transactions in this range.",
+    "lastDays": "Last {n} days",
+    "noteSearch": "Note search",
+    "windowDays": "Window (days)",
+    "all": "all"
+  },
+  "dash": {
+    "title": "Dashboard",
+    "today": "Today",
+    "thisMonth": "This month",
+    "thisYear": "This year",
+    "save": "save",
+    "inv": "inv",
+    "breakdown": "Spending breakdown (this month)",
+    "savings6": "Savings rate (6 months)",
+    "budgetVsActual": "Budget vs actual (this month)"
+  },
+  "report": {
+    "title": "Report",
+    "print": "Print",
+    "summary": "Summary",
+    "net": "Net",
+    "savingsRate": "Savings rate",
+    "byCategory": "Spending by category",
+    "category": "Category",
+    "total": "Total",
+    "share": "Share",
+    "budgetVsActual": "Budget vs actual",
+    "top5": "Top 5 transactions"
+  },
+  "budget": {
+    "overspent": "overspent",
+    "carry": "carry"
+  },
+  "settings": {
+    "title": "Settings",
+    "categories": "Categories",
+    "addCategory": "Add category",
+    "nameEn": "Name (EN)",
+    "nameZh": "Name (ZH)",
+    "period": "Budget period",
+    "validFrom": "Valid from",
+    "expire": "Expire",
+    "recurring": "Recurring templates",
+    "materialize": "Post this month",
+    "noRecurring": "No recurring templates.",
+    "monthly": "monthly",
+    "yearly": "yearly",
+    "none": "none"
+  },
+  "common": { "today": "Today", "loading": "Loading…", "all": "all" }
+}
