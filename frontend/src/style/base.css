@@ -18,7 +18,7 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
-body { min-height: 100vh; }
+body { min-height: 100vh; overflow-x: hidden; }
 
 #app { min-height: 100vh; }
 
@@ -28,12 +28,11 @@ input, select, textarea { font: inherit; color: inherit; }
 .app-shell { max-width: 880px; margin: 0 auto; padding: 16px 20px 80px; }
 
 .topbar {
-  display: flex; align-items: center; gap: 12px;
+  display: flex; align-items: center; gap: 10px 12px; flex-wrap: wrap;
   padding: 14px 20px; position: sticky; top: 0;
   background: var(--bg); z-index: 10; border-bottom: 1px solid var(--line);
 }
-.topbar .brand { font-weight: 600; font-size: 15px; margin-right: auto; }
-.topbar nav { display: flex; gap: 4px; }
+.topbar > nav { display: flex; gap: 4px; flex: 1 1 auto; justify-content: center; }
 .topbar nav a {
   padding: 6px 12px; border-radius: 8px; text-decoration: none; color: var(--ink-soft);
   font-size: 14px;
@@ -153,8 +152,39 @@ form .grid > div { min-width: 0; }
   body { background: #fff; }
 }
 
+/* responsive stacked-card pattern for tables under 640px.
+   Each <tr> becomes a card; each <td> becomes a row with the column
+   label injected via its data-label attribute. Requires data-label
+   on every non-action <td>. Action cells span full width at bottom. */
 @media (max-width: 640px) {
   .tiles { grid-template-columns: 1fr; }
   .budget-row .name { width: 100px; }
   form .grid { grid-template-columns: 1fr; }
+  .logo-text { display: none; }
+
+  .data-table thead { display: none; }
+  .data-table tbody tr {
+    display: block;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .data-table tbody tr:last-child { border-bottom: none; }
+  .data-table td {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 5px 0; border: 0; text-align: right;
+  }
+  .data-table td::before {
+    content: attr(data-label);
+    color: var(--ink-soft); font-size: 12px; text-align: left;
+    padding-right: 12px;
+  }
+  .data-table td.action {
+    width: auto; margin-top: 6px; justify-content: flex-end;
+  }
+  .data-table td.action::before { content: ""; }
+}
+
+@media (max-width: 480px) {
+  .topbar { padding: 12px 16px; }
+  .app-shell { padding: 12px 16px 80px; }
 }

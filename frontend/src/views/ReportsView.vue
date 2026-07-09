@@ -6,7 +6,7 @@ import { dataVersion } from '../composables/useDataVersion'
 import { i18n } from '../i18n'
 import { useCategories, categoryName, findCategory } from '../composables/useCategories'
 import { money, percent, fmtDate } from '../format'
-import CategoryBar from '../components/CategoryBar.vue'
+import CategoryPie from '../components/CategoryPie.vue'
 import SavingsRateLine from '../components/SavingsRateLine.vue'
 import BudgetVsActual from '../components/BudgetVsActual.vue'
 
@@ -83,6 +83,10 @@ function printPage() { window.print() }
 function fmtMonthLabel(m: number): string {
   return fmtDate(`${anchorYear.value}-${String(m).padStart(2, '0')}-01`, { month: 'short' })
 }
+
+function shiftYear(delta: number) {
+  yearNum.value = Math.min(2100, Math.max(2000, yearNum.value + delta))
+}
 </script>
 
 <template>
@@ -93,8 +97,11 @@ function fmtMonthLabel(m: number): string {
       <button :class="{ active: period === 'year' }" @click="period = 'year'">{{ t('report.year') }}</button>
     </div>
     <input v-if="period === 'month'" type="month" v-model="monthStr" />
-    <input v-else type="number" min="2000" max="2100" v-model.number="yearNum"
-           style="width: 100px; font-variant-numeric: tabular-nums" />
+    <div v-else class="year-spin" role="group" :aria-label="t('report.year')">
+      <button class="yr-btn" type="button" aria-label="Previous year" @click="shiftYear(-1)">‹</button>
+      <span class="yr-val" style="font-variant-numeric: tabular-nums">{{ yearNum }}</span>
+      <button class="yr-btn" type="button" aria-label="Next year" @click="shiftYear(1)">›</button>
+    </div>
     <button class="btn no-print" style="margin-left: auto" @click="printPage">{{ t('report.print') }}</button>
   </div>
 
@@ -139,7 +146,7 @@ function fmtMonthLabel(m: number): string {
     <!-- breakdown -->
     <div class="card" style="margin-top: 16px">
       <div class="section-title">{{ t('report.byCategory') }}</div>
-      <CategoryBar v-if="report.breakdown.length" :rows="report.breakdown" />
+      <CategoryPie v-if="report.breakdown.length" :rows="report.breakdown" />
       <table v-if="report.breakdown.length" class="data-table" style="margin-top: 12px">
         <thead>
           <tr>
@@ -150,9 +157,9 @@ function fmtMonthLabel(m: number): string {
         </thead>
         <tbody>
           <tr v-for="r in report.breakdown" :key="r.category_id">
-            <td>{{ locale === 'zh-CN' && r.name_zh ? r.name_zh : r.name_en }}</td>
-            <td class="num">{{ money(r.total) }}</td>
-            <td class="num" style="color: var(--ink-soft)">
+            <td data-label="Category">{{ locale === 'zh-CN' && r.name_zh ? r.name_zh : r.name_en }}</td>
+            <td class="num" data-label="Total">{{ money(r.total) }}</td>
+            <td class="num" data-label="Share" style="color: var(--ink-soft)">
               {{ totalSpending ? percent(r.total / totalSpending) : '—' }}
             </td>
           </tr>
@@ -184,11 +191,11 @@ function fmtMonthLabel(m: number): string {
         </thead>
         <tbody>
           <tr v-for="m in report.monthly" :key="m.m">
-            <td>{{ fmtMonthLabel(m.m) }}</td>
-            <td class="num" style="color: var(--accent)">{{ money(m.income) }}</td>
-            <td class="num">{{ money(m.spending) }}</td>
-            <td class="num">{{ money(m.investment) }}</td>
-            <td class="num" :style="{ color: m.net >= 0 ? 'var(--accent)' : 'var(--red)' }">
+            <td data-label="Month">{{ fmtMonthLabel(m.m) }}</td>
+            <td class="num" data-label="Income" style="color: var(--accent)">{{ money(m.income) }}</td>
+            <td class="num" data-label="Spending">{{ money(m.spending) }}</td>
+            <td class="num" data-label="Investment">{{ money(m.investment) }}</td>
+            <td class="num" data-label="Net" :style="{ color: m.net >= 0 ? 'var(--accent)' : 'var(--red)' }">
               {{ money(m.net) }}
             </td>
           </tr>
@@ -233,4 +240,16 @@ function fmtMonthLabel(m: number): string {
   background: var(--accent);
   color: #fff;
 }
+.year-spin {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid var(--line); border-radius: 8px; background: var(--surface);
+  padding: 4px 6px;
+}
+.yr-btn {
+  width: 26px; height: 26px; border-radius: 6px;
+  font-size: 16px; line-height: 1; color: var(--ink-soft);
+  background: var(--bg);
+}
+.yr-btn:hover { background: var(--accent-soft); color: var(--accent); }
+.yr-val { font-size: 14px; font-weight: 600; min-width: 40px; text-align: center; }
 </style>

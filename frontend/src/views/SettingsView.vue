@@ -104,10 +104,10 @@ async function addRecurring() {
       </thead>
       <tbody>
         <tr v-for="c in categories" :key="c.id">
-          <td>{{ categoryName(c, locale as string) }}</td>
-          <td class="muted">{{ t(`settings.${c.budget_period}`) }}</td>
-          <td class="muted" style="font-variant-numeric:tabular-nums">{{ fmtDate(c.valid_from, { year: 'numeric' }) }}</td>
-          <td class="action no-print">
+          <td data-label="Name">{{ categoryName(c, locale as string) }}</td>
+          <td class="muted" data-label="Period">{{ t(`settings.${c.budget_period}`) }}</td>
+          <td class="muted" data-label="Valid from" style="font-variant-numeric:tabular-nums">{{ fmtDate(c.valid_from, { year: 'numeric' }) }}</td>
+          <td class="action no-print" data-label="">
             <button class="btn secondary" style="font-size:12px;padding:4px 10px"
                     @click="expireCategory(c.id)">{{ t('settings.expire') }}</button>
           </td>
@@ -149,11 +149,11 @@ async function addRecurring() {
       </thead>
       <tbody>
         <tr v-for="r in recurring" :key="r.id">
-          <td>{{ r.note_en || t(`kind.${r.kind}`) }}</td>
-          <td class="muted">{{ t(`kind.${r.kind}`) }}</td>
-          <td class="num" style="font-variant-numeric:tabular-nums">{{ r.day_of_month }}</td>
-          <td class="num" style="font-variant-numeric:tabular-nums">{{ money(r.amount) }}</td>
-          <td class="action no-print">
+          <td data-label="Note">{{ r.note_en || t(`kind.${r.kind}`) }}</td>
+          <td class="muted" data-label="Type">{{ t(`kind.${r.kind}`) }}</td>
+          <td class="num" data-label="Day" style="font-variant-numeric:tabular-nums">{{ r.day_of_month }}</td>
+          <td class="num" data-label="Amount" style="font-variant-numeric:tabular-nums">{{ money(r.amount) }}</td>
+          <td class="action no-print" data-label="">
             <button class="btn" style="font-size:12px;padding:4px 12px"
                     @click="materialize(r.id)">{{ t('settings.materialize') }}</button>
           </td>

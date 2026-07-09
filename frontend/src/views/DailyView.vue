@@ -56,7 +56,7 @@ function resetFilters() {
 </script>
 
 <template>
-  <h1 style="font-size:20px;display:flex;align-items:center;gap:10px;margin-bottom:0">
+  <h1 style="font-size:20px;display:flex;align-items:center;flex-wrap:wrap;gap:8px 10px;margin-bottom:0">
     {{ t('daily.title') }}
     <span class="muted" style="font-size:13px;font-weight:400">
       {{ t('daily.lastDays', { n: days }) }}

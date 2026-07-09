@@ -10,6 +10,6 @@ defineProps<{ size?: number; withText?: boolean }>()
       <rect x="14.5" y="18" width="3" height="6" fill="#2d6a4f" />
       <path d="M11 22 L21 22" stroke="#2d6a4f" stroke-width="0.9" opacity="0.45" />
     </svg>
-    <span v-if="withText" style="font-weight:600;font-size:15px;letter-spacing:-0.01em">Home Ledger</span>
+    <span v-if="withText" class="logo-text" style="font-weight:600;font-size:15px;letter-spacing:-0.01em">Home Ledger</span>
   </span>
 </template>
