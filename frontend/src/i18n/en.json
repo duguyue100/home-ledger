@@ -1,5 +1,5 @@
 {
-  "nav": { "daily": "Daily", "dashboard": "Dashboard", "report": "Report", "settings": "Settings" },
+  "nav": { "daily": "Daily", "reports": "Reports", "settings": "Settings" },
   "kind": {
     "income": "Income",
     "spending": "Spending",
@@ -9,6 +9,10 @@
   "daily": {
     "title": "Daily",
     "filters": "Filters",
+    "showFilters": "Show filters",
+    "hideFilters": "Hide filters",
+    "apply": "Apply",
+    "reset": "Reset",
     "quickAdd": "Quick add",
     "date": "Date",
     "kind": "Type",
@@ -28,29 +32,24 @@
     "windowDays": "Window (days)",
     "all": "all"
   },
-  "dash": {
-    "title": "Dashboard",
-    "today": "Today",
-    "thisMonth": "This month",
-    "thisYear": "This year",
-    "save": "save",
-    "inv": "inv",
-    "breakdown": "Spending breakdown (this month)",
-    "savings6": "Savings rate (6 months)",
-    "budgetVsActual": "Budget vs actual (this month)"
-  },
   "report": {
-    "title": "Report",
+    "title": "Reports",
     "print": "Print",
+    "period": "Period",
+    "month": "Month",
+    "year": "Year",
     "summary": "Summary",
     "net": "Net",
     "savingsRate": "Savings rate",
+    "savingsRateRolling": "Savings rate (12 months)",
     "byCategory": "Spending by category",
     "category": "Category",
     "total": "Total",
     "share": "Share",
     "budgetVsActual": "Budget vs actual",
-    "top5": "Top 5 transactions"
+    "budgetVsActualYear": "Budget vs actual (year to date)",
+    "top5": "Top 5 transactions",
+    "monthlyBreakdown": "Monthly breakdown"
   },
   "budget": {
     "overspent": "overspent",

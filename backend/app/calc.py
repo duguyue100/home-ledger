@@ -172,6 +172,74 @@ def savings_rate_rolling(
     return (income - spending) / income
 
 
+def savings_rate_year(session: Session, year: int) -> float | None:
+    """Annual savings rate = (income - spending) / income for the calendar year.
+
+    Borrowing and investment excluded, same as monthly savings_rate.
+    """
+    s, e = year_bounds(year)
+    income = _sum_amounts(session, KINDS_INCOME, s, e)
+    if income == 0:
+        return None
+    spending = _sum_amounts(session, KINDS_SPENDING, s, e)
+    return (income - spending) / income
+
+
+def budget_vs_actual_year(session: Session, year: int) -> list[dict]:
+    """Yearly budget-vs-actual. YTD totals per category, same row shape as monthly.
+
+    - monthly-period category: budget = monthly_amount * months_active_in_year
+    - yearly-period category:   budget = yearly_amount * (months_active_in_year / 12)
+    - spent = sum of spending txns in [year-01-01, year+1-01-01)
+    - borrowed_carried, overspent left as 0/False (carryover is a monthly concept)
+    """
+    ys, ye = year_bounds(year)
+    rows = session.exec(
+        select(Category)
+        .where((Category.valid_to == None) | (Category.valid_to > ys))  # noqa: E711
+        .where(Category.valid_from < ye)
+        .where(Category.budget_period != "none")
+        .order_by(Category.name_en)
+    ).all()
+    out = []
+    for c in rows:
+        spent = _sum_amounts(session, KINDS_SPENDING, ys, ye, c.id)
+        # sum monthly budgets as-of each month of the year
+        budget_total = 0
+        for m in range(1, 13):
+            on = date(year, m, 1)
+            if c.valid_from > on:
+                continue
+            b = budget_as_of(session, c.id, on)
+            if b is None:
+                continue
+            if c.budget_period == "yearly":
+                budget_total += b // 12
+            else:
+                budget_total += b
+        out.append({
+            "category_id": c.id,
+            "name_en": c.name_en,
+            "name_zh": c.name_zh or c.name_en,
+            "budget": budget_total,
+            "spent": spent,
+            "borrowed_carried": 0,
+            "available": budget_total,
+            "overspent": spent > budget_total if budget_total else False,
+        })
+    return out
+
+
+def monthly_summaries(session: Session, year: int) -> list[dict]:
+    """Per-month summary for a year (income/spending/investment/net/y/m)."""
+    out = []
+    for m in range(1, 13):
+        s, e = month_bounds(year, m)
+        sm = summary(session, s, e)
+        out.append({"y": year, "m": m, **sm})
+    return out
+
+
 def category_breakdown(
     session: Session, start: date, end: date
 ) -> list[dict]:

@@ -2,7 +2,6 @@
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { api } from '../api'
-import { dataVersion } from '../composables/useDataVersion'
 import { i18n } from '../i18n'
 import { useCategories, categoryName, findCategory } from '../composables/useCategories'
 import { money, percent, fmtDate } from '../format'
@@ -44,21 +43,35 @@ const { items, loading, error } = useTransactions(() => ({
 }))
 
 watch(() => i18n.global.locale.value, () => {}) // re-render label names
+
+function toggleFilters() { showFilters.value = !showFilters.value }
+function applyFilters() { showFilters.value = false }
+function resetFilters() {
+  kinds.value = { spending: true, income: true, investment: false, borrowing: false }
+  categoryId.value = null
+  tag.value = ''
+  q.value = ''
+  days.value = 10
+}
 </script>
 
 <template>
-  <h1 style="font-size:20px;margin-bottom:16px">
+  <h1 style="font-size:20px;display:flex;align-items:center;gap:10px;margin-bottom:0">
     {{ t('daily.title') }}
     <span class="muted" style="font-size:13px;font-weight:400">
       {{ t('daily.lastDays', { n: days }) }}
     </span>
-    <button class="btn secondary no-print" style="margin-left:auto;font-size:13px;padding:5px 12px"
-            @click="showFilters = !showFilters">{{ t('daily.filters') }}</button>
+    <button
+      class="btn secondary no-print filter-toggle"
+      :class="{ active: showFilters }"
+      style="margin-left:auto;font-size:13px;padding:5px 12px;display:inline-flex;align-items:center;gap:6px"
+      @click="toggleFilters">
+      <span :style="{ transform: showFilters ? 'rotate(90deg)' : 'none', display: 'inline-block', transition: 'transform .12s' }">▸</span>
+      {{ showFilters ? t('daily.hideFilters') : t('daily.showFilters') }}
+    </button>
   </h1>
 
-  <QuickAdd />
-
-  <div v-if="showFilters" class="card no-print" style="margin-top:16px;margin-bottom:16px">
+  <div v-if="showFilters" class="filters-strip no-print">
     <div class="grid">
       <div>
         <label>{{ t('daily.kind') }}</label>
@@ -90,8 +103,14 @@ watch(() => i18n.global.locale.value, () => {}) // re-render label names
         <label>{{ t('daily.windowDays') }}</label>
         <input type="number" min="1" max="120" v-model.number="days" />
       </div>
+      <div class="full" style="display:flex;gap:8px;align-items:flex-end">
+        <button class="btn" style="padding:7px 14px;font-size:13px" @click="applyFilters">{{ t('daily.apply') }}</button>
+        <button class="btn secondary" style="padding:7px 14px;font-size:13px" @click="resetFilters">{{ t('daily.reset') }}</button>
+      </div>
     </div>
   </div>
+
+  <QuickAdd style="margin-top:16px" />
 
   <div v-if="error" class="err">{{ error }}</div>
   <div v-else-if="loading" class="empty">{{ t('common.loading') }}</div>
@@ -99,3 +118,20 @@ watch(() => i18n.global.locale.value, () => {}) // re-render label names
     <TxnList :txns="items" />
   </div>
 </template>
+
+<style scoped>
+.filters-strip {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 0 0 var(--radius) var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+  margin: 0 0 16px;
+}
+.filter-toggle.active {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: none;
+}
+.filter-toggle.active span { color: #fff; }
+</style>

@@ -142,3 +142,68 @@ def test_category_breakdown_sums_spending(session):
     rows = calc.category_breakdown(session, date(2026, 7, 1), date(2026, 8, 1))
     by_name = {r["name_en"]: r["total"] for r in rows}
     assert by_name == {"Food": 5000, "Transport": 5000}
+
+
+# ---- savings_rate_year ----
+
+def test_savings_rate_year_simple(session):
+    _txn(session, date(2026, 1, 5), "income", 500000)
+    _txn(session, date(2026, 6, 15), "spending", 300000)
+    assert calc.savings_rate_year(session, 2026) == 0.4
+
+
+def test_savings_rate_year_excludes_borrowing_investment(session):
+    _txn(session, date(2026, 2, 1), "income", 500000)
+    _txn(session, date(2026, 4, 10), "spending", 300000)
+    _txn(session, date(2026, 8, 1), "borrowing", 100000)  # ignored
+    _txn(session, date(2026, 9, 1), "investment", 50000)  # ignored
+    assert calc.savings_rate_year(session, 2026) == 0.4
+
+
+def test_savings_rate_year_zero_income(session):
+    _txn(session, date(2026, 3, 1), "spending", 10000)
+    assert calc.savings_rate_year(session, 2026) is None
+
+
+# ---- budget_vs_actual_year ----
+
+def test_budget_vs_actual_year_sums_monthly_across_year(session):
+    food = _cat(session, "Food", "monthly")
+    _budget(session, food.id, 50000)  # 500/month -> 6000/year
+    _txn(session, date(2026, 1, 10), "spending", 20000, cat_id=food.id)
+    _txn(session, date(2026, 6, 15), "spending", 40000, cat_id=food.id)
+    rows = {r["name_en"]: r for r in calc.budget_vs_actual_year(session, 2026)}
+    assert rows["Food"]["budget"] == 600000
+    assert rows["Food"]["spent"] == 60000
+    assert rows["Food"]["overspent"] is False
+
+
+def test_budget_vs_actual_year_yearly_budget_divided_by_12(session):
+    tax = _cat(session, "Tax", "yearly")
+    _budget(session, tax.id, 120000)  # 1200/year -> 100/month counted
+    _txn(session, date(2026, 4, 1), "spending", 150000, cat_id=tax.id)
+    rows = {r["name_en"]: r for r in calc.budget_vs_actual_year(session, 2026)}
+    assert rows["Tax"]["budget"] == 120000  # 100*12
+    assert rows["Tax"]["spent"] == 150000
+    assert rows["Tax"]["overspent"] is True
+
+
+def test_budget_vs_actual_year_excludes_none_period(session):
+    ignored = _cat(session, "Misc", "none")
+    _budget(session, ignored.id, 9999999)
+    rows = {r["name_en"]: r for r in calc.budget_vs_actual_year(session, 2026)}
+    assert "Misc" not in rows
+
+
+# ---- monthly_summaries ----
+
+def test_monthly_summaries_covers_twelve_months(session):
+    _txn(session, date(2026, 1, 5), "income", 500000)
+    _txn(session, date(2026, 6, 10), "spending", 300000)
+    rows = calc.monthly_summaries(session, 2026)
+    assert len(rows) == 12
+    by_m = {r["m"]: r for r in rows}
+    assert by_m[1]["income"] == 500000
+    assert by_m[6]["spending"] == 300000
+    assert by_m[2]["income"] == 0
+    assert by_m[2]["net"] == 0

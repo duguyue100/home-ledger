@@ -63,6 +63,21 @@ input, select, textarea {
 }
 input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
 
+/* iOS Safari gives date/month inputs intrinsic min-content larger than a 1fr
+   grid cell; without min-width:0 the field expands and bleeds into the next
+   column. Force shrinkability + native-aligned value text. */
+input[type="date"], input[type="month"] {
+  min-width: 0;
+  -webkit-appearance: none;
+  appearance: none;
+}
+input[type="date"]::-webkit-date-and-time-value,
+input[type="month"]::-webkit-date-and-time-value {
+  text-align: left;
+  min-height: 1.4em;
+}
+form .grid > div { min-width: 0; }
+
 .btn {
   padding: 8px 16px; border-radius: 8px; background: var(--accent); color: #fff;
   font-size: 14px; font-weight: 500;
@@ -114,6 +129,19 @@ input:focus, select:focus, textarea:focus { outline: none; border-color: var(--a
 .budget-row .bar > span { display: block; height: 100%; background: var(--accent); }
 .budget-row .bar > span.over { background: var(--red); }
 .budget-row .nums { font-size: 12px; color: var(--ink-soft); width: 180px; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* shared column-aligned table for settings lists and report breakdown */
+.data-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.data-table th {
+  text-align: left; color: var(--ink-soft); font-size: 12px; font-weight: 500;
+  padding: 6px 8px; border-bottom: 1px solid var(--line);
+}
+.data-table th.num { text-align: right; }
+.data-table th.action { width: 1%; }
+.data-table td { padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.data-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.data-table td.action { white-space: nowrap; text-align: right; }
+.data-table tr:last-child td { border-bottom: none; }
 
 .empty { color: var(--ink-soft); font-size: 14px; padding: 24px; text-align: center; }
 .muted { color: var(--ink-soft); font-size: 12px; }

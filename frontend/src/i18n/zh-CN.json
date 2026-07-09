@@ -1,5 +1,5 @@
 {
-  "nav": { "daily": "日常", "dashboard": "仪表盘", "report": "报告", "settings": "设置" },
+  "nav": { "daily": "日常", "reports": "报告", "settings": "设置" },
   "kind": {
     "income": "收入",
     "spending": "支出",
@@ -9,6 +9,10 @@
   "daily": {
     "title": "日常",
     "filters": "筛选",
+    "showFilters": "显示筛选",
+    "hideFilters": "隐藏筛选",
+    "apply": "应用",
+    "reset": "重置",
     "quickAdd": "快速添加",
     "date": "日期",
     "kind": "类型",
@@ -28,29 +32,24 @@
     "windowDays": "时间窗口（天）",
     "all": "全部"
   },
-  "dash": {
-    "title": "仪表盘",
-    "today": "今天",
-    "thisMonth": "本月",
-    "thisYear": "今年",
-    "save": "已存",
-    "inv": "投资",
-    "breakdown": "本月支出明细",
-    "savings6": "储蓄率（近 6 个月）",
-    "budgetVsActual": "预算与实际（本月）"
-  },
   "report": {
     "title": "报告",
     "print": "打印",
+    "period": "周期",
+    "month": "月",
+    "year": "年",
     "summary": "概览",
     "net": "净额",
     "savingsRate": "储蓄率",
+    "savingsRateRolling": "储蓄率（12 个月）",
     "byCategory": "按类别支出",
     "category": "类别",
     "total": "合计",
     "share": "占比",
     "budgetVsActual": "预算与实际",
-    "top5": "金额前 5 笔"
+    "budgetVsActualYear": "预算与实际（年初至今）",
+    "top5": "金额前 5 笔",
+    "monthlyBreakdown": "月度明细"
   },
   "budget": {
     "overspent": "超支",

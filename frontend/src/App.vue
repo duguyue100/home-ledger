@@ -17,8 +17,7 @@ function toggle(l: 'en' | 'zh-CN') {
     <Logo with-text />
     <nav>
       <RouterLink to="/daily">{{ t('nav.daily') }}</RouterLink>
-      <RouterLink to="/dashboard">{{ t('nav.dashboard') }}</RouterLink>
-      <RouterLink to="/report">{{ t('nav.report') }}</RouterLink>
+      <RouterLink to="/reports">{{ t('nav.reports') }}</RouterLink>
       <RouterLink to="/settings">{{ t('nav.settings') }}</RouterLink>
     </nav>
     <div class="lang-toggle">

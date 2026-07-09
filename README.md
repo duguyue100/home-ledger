@@ -23,16 +23,21 @@ safe (upserts by `external_id="seed:..."`).
 ## What it does
 
 - **Daily view** — card timeline of the last *N* days (default 10), with a
-  quick-add form pinned at top. Filter drawer: kind, category, tag, note
-  substring, window.
-- **Dashboard** — three tiles (today / this month / this year), spending breakdown
-  by category, 6-month savings-rate line, budget-vs-actual with overspend flags
-  and borrow carryover. All charts refetch on every add / delete.
-- **Report** — monthly printable view: summary tiles, breakdown by category with
-  share %, budget vs actual, top 5 transactions. Yearly is a date-range on the
-  same endpoint (UI deferred).
+  quick-add form pinned at top. A stateful "Show filters" toggle in the header
+  expands a filter strip: kind, category, tag, note substring, window. Tap
+  *Apply* to collapse and apply, *Reset* to clear.
+- **Reports** — single page that absorbs the old Dashboard + Report tabs. A
+  *Month* / *Year* segmented control switches the period; a `<input type=month>`
+  or year number selects the anchor. Always on top: a 12-month savings-rate
+  trend line anchored at the selected period. Below: summary tiles (income /
+  spending / investment / net / savings rate), spending-by-category bar chart +
+  share table, budget vs actual, and the top 5 transactions. *Year* mode also
+  renders a 12-row monthly breakdown. A Print button produces a paper view.
+  Targets: monthly = `/api/report?ref=…&period=month`, yearly =
+  `/api/report?ref=…&period=year`; legacy `?month=` still works.
 - **Settings** — add / expire categories (with initial budget), add recurring
-  templates, one-click "post this month" materialization.
+  templates, one-click "post this month" materialization. Categories and
+  recurring templates are shown as proper column-aligned tables.
 - **Bulk import** — JSON upsert API keyed by `external_id`, category resolved by
   name. Drive it from a spreadsheet parser script over localhost. See
   `POST /api/transactions/bulk` below.
@@ -125,12 +130,12 @@ Dates ISO `YYYY-MM-DD`. Filters use `from` / `to` (end exclusive).
 | `GET` | `/breakdown?from=&to=` | spending grouped by category, desc |
 | `GET` | `/budget-vs-actual?year=&month=` | per active category: budget, spent, borrowed_carried, available, overspent |
 | `GET` | `/savings-rate?year=&month=&roll=0` | `(income − spending) / income`; `roll` for N-month rolling |
-| `GET` | `/report?month=` | full payload for the printable view |
+| `GET` | `/report?ref=&period=month\|year&roll=` | summary, breakdown, budget-vs-actual, savings_rate, savings_rate_rolling, monthly (year only). Legacy `?month=` accepted for back-compat |
 
 ### Bulk import example
 
 ```bash
-curl -s localhost:8000/api/transactions/bulk -H 'Content-Type: application/json' -d '[
+curl -s localhost:5120/api/transactions/bulk -H 'Content-Type: application/json' -d '[
   {"occurred_on":"2026-07-01","kind":"spending","amount":1545,
    "category_name":"Groceries & Food","note":"Migros","external_id":"sheet:r42"},
   {"occurred_on":"2026-06-14","kind":"spending","amount":4000,
@@ -180,7 +185,7 @@ frontend/
   src/i18n/{en,zh-CN}.json
   src/composables/   useDataVersion · useCategories · useTransactions · useSummary
   src/components/    QuickAdd · TxnCard · TxnList · CategoryBar · SavingsRateLine · BudgetVsActual
-  src/views/         Daily · Dashboard · Report · Settings
+  src/views/         Daily · Reports · Settings
   src/style/base.css
 data/                gitignored; holds ledger.db
 Dockerfile           multi-stage: build frontend → uv install backend → serve both

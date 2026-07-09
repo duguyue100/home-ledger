@@ -40,7 +40,8 @@ export const api = {
   budgetVsActual: (y: number, m: number) => req(`/budget-vs-actual?year=${y}&month=${m}`),
   savingsRate: (y: number, m: number, roll = 0) =>
     req(`/savings-rate?year=${y}&month=${m}` + (roll ? `&roll=${roll}` : '')),
-  report: (month: string) => req(`/report?month=${month}`),
+  report: (ref: string, period: 'month' | 'year' = 'month') =>
+    req(`/report?ref=${ref}&period=${period}`),
 }
 
 export type Txn = {

@@ -4,7 +4,7 @@ Aggregates are thin wrappers over app.calc. Request schemas are plain Pydantic
 models (not table models) so create/update shapes stay explicit.
 """
 from datetime import date
-from typing import Optional
+from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
@@ -429,12 +429,46 @@ def savings_rate(year: int, month: int, roll: int = 0,
 
 
 @router.get("/report")
-def report(month: date, session: Session = Depends(get_session)):
-    s, e = calc.month_bounds(month.year, month.month)
+def report(
+    month: date | None = Query(None),
+    ref: date | None = Query(None),
+    period: Literal["month", "year"] = "month",
+    roll: int = 0,
+    session: Session = Depends(get_session),
+):
+    """Period report. `ref` is the month (day-of-month ignored) or year anchor.
+
+    The legacy `month` query alias still works for back-compat with monthly
+    callers and tests.
+    """
+    r = ref or month
+    if r is None:
+        raise HTTPException(422, "ref (or month) is required")
+    if period == "month":
+        s, e = calc.month_bounds(r.year, r.month)
+        return {
+            "period": "month",
+            "ref": r,
+            "summary": calc.summary(session, s, e),
+            "breakdown": calc.category_breakdown(session, s, e),
+            "budget_vs_actual": calc.budget_vs_actual(session, r.year, r.month),
+            "savings_rate": calc.savings_rate(session, r.year, r.month),
+            "savings_rate_rolling": calc.savings_rate_rolling(
+                session, r.year, r.month, months=6 if not roll else roll
+            ),
+        }
+    # yearly
+    s, e = calc.year_bounds(r.year)
     return {
-        "month": month,
+        "period": "year",
+        "ref": r,
+        "year": r.year,
         "summary": calc.summary(session, s, e),
         "breakdown": calc.category_breakdown(session, s, e),
-        "budget_vs_actual": calc.budget_vs_actual(session, month.year, month.month),
-        "savings_rate": calc.savings_rate(session, month.year, month.month),
+        "budget_vs_actual": calc.budget_vs_actual_year(session, r.year),
+        "savings_rate": calc.savings_rate_year(session, r.year),
+        "savings_rate_rolling": calc.savings_rate_rolling(
+            session, r.year, 12, months=12
+        ),
+        "monthly": calc.monthly_summaries(session, r.year),
     }

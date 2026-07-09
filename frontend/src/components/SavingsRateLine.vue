@@ -5,20 +5,30 @@ import { api } from '../api'
 import { dataVersion } from '../composables/useDataVersion'
 import { fmtDate } from '../format'
 
+const props = withDefaults(defineProps<{
+  months?: number
+  endYear?: number   // anchor end year (defaults to current)
+  endMonth?: number   // anchor end month 1-12 (defaults to current)
+}>(), {
+  months: 12,
+  endYear: () => new Date().getFullYear(),
+  endMonth: () => new Date().getMonth() + 1,
+})
+
 const canvas = ref<HTMLCanvasElement | null>(null)
 let chart: Chart | null = null
 const rates = ref<{ month: string; rate: number | null }[]>([])
 
-function monthsAgo(n: number): { y: number; m: number } {
-  const d = new Date()
+function shiftBack(y: number, m: number, n: number): { y: number; m: number } {
+  const d = new Date(y, m - 1, 1)
   d.setMonth(d.getMonth() - n)
   return { y: d.getFullYear(), m: d.getMonth() + 1 }
 }
 
 async function load() {
   const list: { month: string; rate: number | null }[] = []
-  for (let n = 5; n >= 0; n--) {
-    const { y, m } = monthsAgo(n)
+  for (let n = props.months - 1; n >= 0; n--) {
+    const { y, m } = shiftBack(props.endYear, props.endMonth, n)
     const r = await api.savingsRate(y, m)
     list.push({ month: `${y}-${String(m).padStart(2, '0')}-01`, rate: r.rate })
   }
@@ -49,6 +59,7 @@ function render() {
 }
 
 onMounted(load)
+watch(() => [props.endYear, props.endMonth, props.months].join('|'), load)
 watch(dataVersion, load)
 </script>
 

@@ -93,13 +93,28 @@ async function addRecurring() {
 
   <div class="card">
     <div class="section-title">{{ t('settings.categories') }}</div>
-    <div v-for="c in categories" :key="c.id" class="budget-row">
-      <div class="name">{{ categoryName(c, locale as string) }}</div>
-      <div class="muted" style="font-size:12px">{{ t(`settings.${c.budget_period}`) }}</div>
-      <div class="nums">{{ fmtDate(c.valid_from, { year: 'numeric' }) }}</div>
-      <button class="btn secondary no-print" style="font-size:12px;padding:4px 10px;margin-left:12px"
-              @click="expireCategory(c.id)">{{ t('settings.expire') }}</button>
-    </div>
+    <table class="data-table" v-if="categories.length">
+      <thead>
+        <tr>
+          <th>{{ t('report.category') }}</th>
+          <th style="width:1%">{{ t('settings.period') }}</th>
+          <th style="width:1%">{{ t('settings.validFrom') }}</th>
+          <th class="action no-print">{{ t('settings.expire') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="c in categories" :key="c.id">
+          <td>{{ categoryName(c, locale as string) }}</td>
+          <td class="muted">{{ t(`settings.${c.budget_period}`) }}</td>
+          <td class="muted" style="font-variant-numeric:tabular-nums">{{ fmtDate(c.valid_from, { year: 'numeric' }) }}</td>
+          <td class="action no-print">
+            <button class="btn secondary" style="font-size:12px;padding:4px 10px"
+                    @click="expireCategory(c.id)">{{ t('settings.expire') }}</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <div v-else class="empty">{{ t('common.loading') }}</div>
 
     <div class="section-title" style="margin-top:20px">{{ t('settings.addCategory') }}</div>
     <div class="grid">
@@ -122,13 +137,30 @@ async function addRecurring() {
 
   <div class="card" style="margin-top:16px">
     <div class="section-title">{{ t('settings.recurring') }}</div>
-    <div v-if="!recurring.length" class="empty">{{ t('settings.noRecurring') }}</div>
-    <div v-for="r in recurring" :key="r.id" class="budget-row">
-      <div class="name">{{ r.note_en || t(`kind.${r.kind}`) }}</div>
-      <div class="muted" style="font-size:12px">day {{ r.day_of_month }} · {{ money(r.amount) }}</div>
-      <button class="btn no-print" style="font-size:12px;padding:4px 12px;margin-left:auto"
-              @click="materialize(r.id)">{{ t('settings.materialize') }}</button>
-    </div>
+    <table class="data-table" v-if="recurring.length">
+      <thead>
+        <tr>
+          <th>{{ t('daily.note') }}</th>
+          <th style="width:1%">{{ t('daily.kind') }}</th>
+          <th class="num" style="width:1%">day</th>
+          <th class="num" style="width:1%">{{ t('daily.amount') }}</th>
+          <th class="action no-print">{{ t('settings.materialize') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="r in recurring" :key="r.id">
+          <td>{{ r.note_en || t(`kind.${r.kind}`) }}</td>
+          <td class="muted">{{ t(`kind.${r.kind}`) }}</td>
+          <td class="num" style="font-variant-numeric:tabular-nums">{{ r.day_of_month }}</td>
+          <td class="num" style="font-variant-numeric:tabular-nums">{{ money(r.amount) }}</td>
+          <td class="action no-print">
+            <button class="btn" style="font-size:12px;padding:4px 12px"
+                    @click="materialize(r.id)">{{ t('settings.materialize') }}</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <div v-else class="empty">{{ t('settings.noRecurring') }}</div>
     <div v-if="matErr" class="err" style="margin-top:8px">{{ matErr }}</div>
 
     <div class="section-title" style="margin-top:20px">Add recurring</div>
