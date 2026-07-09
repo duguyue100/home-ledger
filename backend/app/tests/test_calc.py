@@ -188,6 +188,26 @@ def test_budget_vs_actual_year_yearly_budget_divided_by_12(session):
     assert rows["Tax"]["overspent"] is True
 
 
+def test_budget_vs_actual_year_yearly_period_counts_investment(session):
+    inv = _cat(session, "Investment", "yearly")
+    _budget(session, inv.id, 1000000)  # 10000/year
+    _txn(session, date(2026, 3, 10), "investment", 60000, cat_id=inv.id)
+    _txn(session, date(2026, 6, 26), "investment", 180000, cat_id=inv.id)
+    rows = {r["name_en"]: r for r in calc.budget_vs_actual_year(session, 2026)}
+    assert rows["Investment"]["budget"] == 1000000
+    assert rows["Investment"]["spent"] == 240000
+    assert rows["Investment"]["overspent"] is False
+
+
+def test_budget_vs_actual_year_monthly_period_excludes_investment(session):
+    food = _cat(session, "Food", "monthly")
+    _budget(session, food.id, 50000)
+    _txn(session, date(2026, 1, 10), "spending", 20000, cat_id=food.id)
+    _txn(session, date(2026, 1, 15), "investment", 99000, cat_id=food.id)  # ignored for monthly
+    rows = {r["name_en"]: r for r in calc.budget_vs_actual_year(session, 2026)}
+    assert rows["Food"]["spent"] == 20000
+
+
 def test_budget_vs_actual_year_excludes_none_period(session):
     ignored = _cat(session, "Misc", "none")
     _budget(session, ignored.id, 9999999)

@@ -203,9 +203,13 @@ def budget_vs_actual_year(session: Session, year: int) -> list[dict]:
     ).all()
     out = []
     for c in rows:
-        spent = _sum_amounts(session, KINDS_SPENDING, ys, ye, c.id)
+        # yearly-period categories (e.g. Investment) count investment outflows as spend.
+        kinds = (KINDS_SPENDING + KINDS_INVESTMENT) if c.budget_period == "yearly" else KINDS_SPENDING
+        spent = _sum_amounts(session, kinds, ys, ye, c.id)
         # sum monthly budgets as-of each month of the year
         budget_total = 0
+        months_active = 0
+        last_b = 0
         for m in range(1, 13):
             on = date(year, m, 1)
             if c.valid_from > on:
@@ -213,10 +217,13 @@ def budget_vs_actual_year(session: Session, year: int) -> list[dict]:
             b = budget_as_of(session, c.id, on)
             if b is None:
                 continue
-            if c.budget_period == "yearly":
-                budget_total += b // 12
-            else:
+            months_active += 1
+            last_b = b
+            if c.budget_period != "yearly":
                 budget_total += b
+        if c.budget_period == "yearly" and months_active:
+            # prorated yearly total (floor div once to avoid centime drift)
+            budget_total = last_b * months_active // 12
         out.append({
             "category_id": c.id,
             "name_en": c.name_en,
