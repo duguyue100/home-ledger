@@ -56,7 +56,71 @@
     "share": "Share",
     "budgetVsActual": "Budget vs actual",
     "budgetVsActualYear": "Budget vs actual (year to date)",
-    "monthlyBreakdown": "Monthly breakdown"
+    "monthlyBreakdown": "Monthly breakdown",
+    "deltas": {
+      "vs": "vs",
+      "mom": "last month",
+      "yoy": "last year",
+      "noData": "—"
+    },
+    "savingsBenchmarks": {
+      "title": "Savings rate benchmarks",
+      "desc": "How this month ranks vs the last 12. Best case you've reached, worst to avoid.",
+      "current": "Current",
+      "median": "Median",
+      "best": "Best",
+      "worst": "Worst",
+      "monthsAbove": "Months ≥ 30%",
+      "monthsData": "{n} months tracked"
+    },
+    "fixedVsDisc": {
+      "title": "Fixed vs discretionary",
+      "desc": "Fixed is committed spend (rent, insurance) you'd pay regardless. Discretionary is what you choose. Your monthly floor — minimum unavoidable spend.",
+      "fixed": "Fixed",
+      "discretionary": "Discretionary",
+      "total": "Total"
+    },
+    "volatility": {
+      "title": "Spending volatility",
+      "desc": "Stability of monthly spending over the last year. Low CV = predictable, easy to budget, small buffer OK. High CV = lumpy, keep more cash on hand.",
+      "avgMonthly": "Avg monthly",
+      "stdDev": "Std dev",
+      "cv": "Variation (CV)",
+      "range": "Min – Max",
+      "stable": "Very stable",
+      "moderate": "Moderate",
+      "variable": "Variable"
+    },
+    "subscriptions": {
+      "title": "Subscription audit",
+      "desc": "Annualized cost of every active recurring expense. The total is the real price you pay — spotting one to cancel is the easiest money saved.",
+      "totalYear": "/year across {n} subscriptions",
+      "name": "Name",
+      "monthly": "Monthly",
+      "annual": "Annual"
+    },
+    "tags": {
+      "title": "Tagged spending",
+      "desc": "Spending grouped by your tags — perfect for answering 'how much did that trip/project really cost me?'",
+      "tag": "Tag",
+      "total": "Total",
+      "count": "Txns",
+      "share": "Share"
+    },
+    "projection": {
+      "title": "Year-end projection",
+      "desc": "If you keep spending at the current pace, here's where each category lands by December. Catch drift early — a category headed over budget can be corrected months in advance.",
+      "projectedYear": "Projected annual spend",
+      "spentYtd": "Spent YTD",
+      "monthsElapsed": "{n} months elapsed",
+      "category": "Category",
+      "projected": "Projected",
+      "budget": "Yearly budget",
+      "status": "Status",
+      "onTrack": "on track",
+      "atRisk": "at risk",
+      "over": "over"
+    }
   },
   "budget": {
     "overspent": "overspent",
@@ -84,7 +148,9 @@
     "confirmDelete": "Permanently delete this entry? This cannot be undone.",
     "monthly": "monthly",
     "yearly": "yearly",
-    "none": "none"
+    "none": "none",
+    "fixed": "Fixed",
+    "fixedHint": "Mark rent, insurance, etc as Fixed — committed monthly spend."
   },
   "common": { "today": "Today", "loading": "Loading…", "all": "all" }
 }

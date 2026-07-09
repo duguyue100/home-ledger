@@ -56,7 +56,71 @@
     "share": "占比",
     "budgetVsActual": "预算与实际",
     "budgetVsActualYear": "预算与实际（年初至今）",
-    "monthlyBreakdown": "月度明细"
+    "monthlyBreakdown": "月度明细",
+    "deltas": {
+      "vs": "对比",
+      "mom": "上月",
+      "yoy": "去年同月",
+      "noData": "—"
+    },
+    "savingsBenchmarks": {
+      "title": "储蓄率基准",
+      "desc": "本月与过去 12 个月的对比。最高是你达到过的好成绩，最低是要避免的。",
+      "current": "本月",
+      "median": "中位数",
+      "best": "最好",
+      "worst": "最差",
+      "monthsAbove": "≥ 30% 月数",
+      "monthsData": "已追踪 {n} 个月"
+    },
+    "fixedVsDisc": {
+      "title": "固定 vs 可自由支配",
+      "desc": "固定是无论如何都要付的钱（房租、保险）。可自由支配是你自己决定的。这个数字是你每月支出的下限 —— 最低不可避免的支出。",
+      "fixed": "固定",
+      "discretionary": "可自由支配",
+      "total": "合计"
+    },
+    "volatility": {
+      "title": "支出波动",
+      "desc": "过去一年每月支出的稳定性。CV 低 = 可预测、好做预算、备用金可以少留。CV 高 = 忽多忽少，多留点现金。",
+      "avgMonthly": "月均",
+      "stdDev": "标准差",
+      "cv": "变异系数 (CV)",
+      "range": "最小 – 最大",
+      "stable": "很稳定",
+      "moderate": "中等",
+      "variable": "波动较大"
+    },
+    "subscriptions": {
+      "title": "订阅审计",
+      "desc": "每个在用的周期性支出的年化成本。这个合计数是你真实付出的总价 —— 砍掉一个订阅是最容易省下的钱。",
+      "totalYear": "/年 共 {n} 项订阅",
+      "name": "名称",
+      "monthly": "月费",
+      "annual": "年化"
+    },
+    "tags": {
+      "title": "按标签统计",
+      "desc": "按你打的标签聚合的支出 —— 最适合回答『那次旅行/项目到底花了多少？』",
+      "tag": "标签",
+      "total": "合计",
+      "count": "笔数",
+      "share": "占比"
+    },
+    "projection": {
+      "title": "年末预测",
+      "desc": "如果你按当前节奏继续花，到 12 月每个类别会到这个数字。提前发现偏航 —— 一个正在超预算的类别可以提前几个月纠正。",
+      "projectedYear": "预测全年支出",
+      "spentYtd": "已花（年初至今）",
+      "monthsElapsed": "已过 {n} 个月",
+      "category": "类别",
+      "projected": "预测",
+      "budget": "年度预算",
+      "status": "状态",
+      "onTrack": "正常",
+      "atRisk": "风险",
+      "over": "超支"
+    }
   },
   "budget": {
     "overspent": "超支",
@@ -84,7 +148,9 @@
     "confirmDelete": "永久删除此条目？该操作无法撤销。",
     "monthly": "月度",
     "yearly": "年度",
-    "none": "无"
+    "none": "无",
+    "fixed": "固定",
+    "fixedHint": "将房租、保险等标记为固定 —— 每月不可避免的支出。"
   },
   "common": { "today": "今天", "loading": "加载中…", "all": "全部" }
 }

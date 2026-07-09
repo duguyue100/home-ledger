@@ -70,6 +70,23 @@ function fmtMonthLabel(m: number): string {
 function shiftYear(delta: number) {
   yearNum.value = Math.min(2100, Math.max(2000, yearNum.value + delta))
 }
+
+function signedPct(p: number | null | undefined): string {
+  if (p == null) return t('report.deltas.noData')
+  const s = p >= 0 ? '+' : ''
+  return `${s}${(p * 100).toFixed(1)}%`
+}
+function pctColor(p: number | null | undefined, invert = false): string {
+  if (p == null) return 'var(--ink-soft)'
+  // invert=true for spending (down is good → accent); default for income/net (up is good)
+  const good = invert ? p < 0 : p > 0
+  return good ? 'var(--accent)' : 'var(--red)'
+}
+function volTone(cv: number): string {
+  if (cv < 0.15) return t('report.volatility.stable')
+  if (cv < 0.30) return t('report.volatility.moderate')
+  return t('report.volatility.variable')
+}
 </script>
 
 <template>
@@ -96,17 +113,31 @@ function shiftYear(delta: number) {
       <SavingsRateLine :months="12" :end-year="anchorYear" :end-month="anchorMonth" />
     </div>
 
-    <!-- summary tiles -->
+    <!-- summary tiles with delta badges -->
     <div class="card" style="margin-top: 16px">
       <div class="section-title">{{ t('report.summary') }}</div>
       <div class="tiles" style="margin-top: 8px">
         <div class="tile">
           <div class="label">{{ t('kind.income') }}</div>
           <div class="value" style="color: var(--accent)">{{ money(report.summary.income) }}</div>
+          <div class="delta" v-if="period === 'month' && report.deltas?.has_mom">
+            {{ signedPct(report.deltas.mom.income) }} {{ t('report.deltas.vs') }} {{ t('report.deltas.mom') }}
+          </div>
+          <div class="delta" v-if="period === 'month' && report.deltas?.has_yoy">
+            {{ signedPct(report.deltas.yoy.income) }} {{ t('report.deltas.vs') }} {{ t('report.deltas.yoy') }}
+          </div>
         </div>
         <div class="tile">
           <div class="label">{{ t('kind.spending') }}</div>
           <div class="value">{{ money(report.summary.spending) }}</div>
+          <div class="delta" v-if="period === 'month' && report.deltas?.has_mom"
+               :style="{ color: pctColor(report.deltas.mom.spending, true) }">
+            {{ signedPct(report.deltas.mom.spending) }} {{ t('report.deltas.vs') }} {{ t('report.deltas.mom') }}
+          </div>
+          <div class="delta" v-if="period === 'month' && report.deltas?.has_yoy"
+               :style="{ color: pctColor(report.deltas.yoy.spending, true) }">
+            {{ signedPct(report.deltas.yoy.spending) }} {{ t('report.deltas.vs') }} {{ t('report.deltas.yoy') }}
+          </div>
         </div>
         <div class="tile">
           <div class="label">{{ t('kind.investment') }}</div>
@@ -117,10 +148,85 @@ function shiftYear(delta: number) {
           <div class="value" :style="{ color: report.summary.net >= 0 ? 'var(--accent)' : 'var(--red)' }">
             {{ money(report.summary.net) }}
           </div>
+          <div class="delta" v-if="period === 'month' && report.deltas?.has_mom"
+               :style="{ color: pctColor(report.deltas.mom.net) }">
+            {{ signedPct(report.deltas.mom.net) }} {{ t('report.deltas.vs') }} {{ t('report.deltas.mom') }}
+          </div>
         </div>
         <div class="tile">
           <div class="label">{{ t('report.savingsRate') }}</div>
           <div class="value">{{ percent(report.savings_rate) }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- savings rate benchmarks (monthly only — yearly uses anchors differently) -->
+    <div v-if="period === 'month' && report.savings_rate_stats" class="card" style="margin-top: 16px">
+      <div class="section-title">{{ t('report.savingsBenchmarks.title') }}</div>
+      <div class="card-desc">{{ t('report.savingsBenchmarks.desc') }}</div>
+      <div class="tiles" style="margin-top: 8px">
+        <div class="tile">
+          <div class="label">{{ t('report.savingsBenchmarks.current') }}</div>
+          <div class="value" style="color: var(--accent)">{{ percent(report.savings_rate_stats.current) }}</div>
+        </div>
+        <div class="tile">
+          <div class="label">{{ t('report.savingsBenchmarks.median') }}</div>
+          <div class="value">{{ percent(report.savings_rate_stats.median) }}</div>
+        </div>
+        <div class="tile">
+          <div class="label">{{ t('report.savingsBenchmarks.best') }}</div>
+          <div class="value" style="color: var(--accent)">{{ percent(report.savings_rate_stats.best) }}</div>
+        </div>
+        <div class="tile">
+          <div class="label">{{ t('report.savingsBenchmarks.worst') }}</div>
+          <div class="value" style="color: var(--red)">{{ percent(report.savings_rate_stats.worst) }}</div>
+        </div>
+        <div class="tile">
+          <div class="label">{{ t('report.savingsBenchmarks.monthsAbove') }}</div>
+          <div class="value">{{ report.savings_rate_stats.months_above_target }} / {{ report.savings_rate_stats.months_with_data }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- fixed vs discretionary -->
+    <div v-if="report.fixed_discretionary" class="card" style="margin-top: 16px">
+      <div class="section-title">{{ t('report.fixedVsDisc.title') }}</div>
+      <div class="card-desc">{{ t('report.fixedVsDisc.desc') }}</div>
+      <div style="margin-top: 12px">
+        <div class="stack-bar">
+          <div class="seg-fixed" :style="{ width: (report.fixed_discretionary.fixed_pct * 100) + '%' }"></div>
+          <div class="seg-disc" :style="{ width: (report.fixed_discretionary.disc_pct * 100) + '%' }"></div>
+        </div>
+        <div class="stack-legend" style="margin-top: 8px">
+          <span><span class="dot fixed"></span>{{ t('report.fixedVsDisc.fixed') }} {{ money(report.fixed_discretionary.fixed) }} ({{ percent(report.fixed_discretionary.fixed_pct) }})</span>
+          <span><span class="dot disc"></span>{{ t('report.fixedVsDisc.discretionary') }} {{ money(report.fixed_discretionary.discretionary) }} ({{ percent(report.fixed_discretionary.disc_pct) }})</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- spending volatility -->
+    <div v-if="report.volatility" class="card" style="margin-top: 16px">
+      <div class="section-title">{{ t('report.volatility.title') }}</div>
+      <div class="card-desc">{{ t('report.volatility.desc') }}</div>
+      <div class="tiles" style="margin-top: 8px">
+        <div class="tile">
+          <div class="label">{{ t('report.volatility.avgMonthly') }}</div>
+          <div class="value">{{ money(report.volatility.mean) }}</div>
+        </div>
+        <div class="tile">
+          <div class="label">{{ t('report.volatility.stdDev') }}</div>
+          <div class="value">{{ money(report.volatility.std) }}</div>
+        </div>
+        <div class="tile">
+          <div class="label">{{ t('report.volatility.cv') }}</div>
+          <div class="value" :style="{ color: report.volatility.cv < 0.15 ? 'var(--accent)' : report.volatility.cv < 0.30 ? 'var(--ink)' : 'var(--red)' }">
+            {{ percent(report.volatility.cv) }}
+          </div>
+          <div class="delta">{{ volTone(report.volatility.cv) }}</div>
+        </div>
+        <div class="tile">
+          <div class="label">{{ t('report.volatility.range') }}</div>
+          <div class="value" style="font-size: 16px">{{ money(report.volatility.min) }} – {{ money(report.volatility.max) }}</div>
         </div>
       </div>
     </div>
@@ -184,6 +290,107 @@ function shiftYear(delta: number) {
         </tbody>
       </table>
     </div>
+
+    <!-- subscription audit -->
+    <div v-if="report.recurring_audit" class="card" style="margin-top: 16px">
+      <div class="section-title">{{ t('report.subscriptions.title') }}</div>
+      <div class="card-desc">{{ t('report.subscriptions.desc') }}</div>
+      <div style="margin-top: 10px; font-size: 22px; font-weight: 600; color: var(--accent)">
+        {{ money(report.recurring_audit.total_annual) }}
+        <span style="font-size: 13px; font-weight: 400; color: var(--ink-soft)">
+          {{ t('report.subscriptions.totalYear', { n: report.recurring_audit.count }) }}
+        </span>
+      </div>
+      <table v-if="report.recurring_audit.items.length" class="data-table" style="margin-top: 10px">
+        <thead>
+          <tr>
+            <th>{{ t('report.subscriptions.name') }}</th>
+            <th class="num">{{ t('report.subscriptions.monthly') }}</th>
+            <th class="num">{{ t('report.subscriptions.annual') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="i in report.recurring_audit.items" :key="i.id">
+            <td data-label="Name">{{ i.note }}</td>
+            <td class="num" data-label="Monthly">{{ money(i.monthly) }}</td>
+            <td class="num" data-label="Annual">{{ money(i.annual) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- tagged spending -->
+    <div v-if="report.tag_breakdown?.length" class="card" style="margin-top: 16px">
+      <div class="section-title">{{ t('report.tags.title') }}</div>
+      <div class="card-desc">{{ t('report.tags.desc') }}</div>
+      <table class="data-table" style="margin-top: 10px">
+        <thead>
+          <tr>
+            <th>{{ t('report.tags.tag') }}</th>
+            <th class="num">{{ t('report.tags.total') }}</th>
+            <th class="num">{{ t('report.tags.count') }}</th>
+            <th class="num">{{ t('report.tags.share') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="r in report.tag_breakdown" :key="r.tag">
+            <td data-label="Tag">{{ r.tag }}</td>
+            <td class="num" data-label="Total">{{ money(r.total) }}</td>
+            <td class="num" data-label="Count">{{ r.count }}</td>
+            <td class="num" data-label="Share" style="color: var(--ink-soft)">
+              {{ totalSpending ? percent(r.total / totalSpending) : '—' }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- YTD projection (yearly mode only) -->
+    <div v-if="period === 'year' && report.ytd_projection" class="card" style="margin-top: 16px">
+      <div class="section-title">{{ t('report.projection.title') }}</div>
+      <div class="card-desc">{{ t('report.projection.desc') }}</div>
+      <div style="margin-top: 10px; display: flex; gap: 20px; flex-wrap: wrap; align-items: baseline">
+        <div>
+          <div style="font-size: 11px; color: var(--ink-soft)">{{ t('report.projection.projectedYear') }}</div>
+          <div style="font-size: 22px; font-weight: 600; color: var(--accent)">{{ money(report.ytd_projection.projected_annual) }}</div>
+        </div>
+        <div>
+          <div style="font-size: 11px; color: var(--ink-soft)">{{ t('report.projection.spentYtd') }}</div>
+          <div style="font-size: 16px; font-weight: 600">{{ money(report.ytd_projection.spent_ytd) }}</div>
+        </div>
+        <div>
+          <div style="font-size: 11px; color: var(--ink-soft)">{{ t('report.projection.monthsElapsed', { n: report.ytd_projection.months_elapsed }) }}</div>
+        </div>
+      </div>
+      <table v-if="report.ytd_projection.by_category.length" class="data-table" style="margin-top: 12px">
+        <thead>
+          <tr>
+            <th>{{ t('report.projection.category') }}</th>
+            <th class="num">{{ t('report.projection.projected') }}</th>
+            <th class="num">{{ t('report.projection.budget') }}</th>
+            <th>{{ t('report.projection.status') }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="c in report.ytd_projection.by_category" :key="c.name_en">
+            <td data-label="Category">{{ locale === 'zh-CN' && c.name_zh ? c.name_zh : c.name_en }}</td>
+            <td class="num" data-label="Projected">{{ money(c.projected) }}</td>
+            <td class="num" data-label="Budget">{{ money(c.budget) }}</td>
+            <td data-label="Status">
+              <span class="pill" :class="{
+                active: c.status === 'on-track',
+                'expired': c.status !== 'on-track'
+              }" :style="{
+                background: c.status === 'on-track' ? 'var(--accent)' : c.status === 'at-risk' ? '#d97706' : 'var(--red)',
+                color: '#fff'
+              }">
+                {{ t(`report.projection.${c.status === 'on-track' ? 'onTrack' : c.status === 'at-risk' ? 'atRisk' : c.status}`) }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </template>
 
@@ -234,4 +441,43 @@ function shiftYear(delta: number) {
   .seg { order: 1; }
   .switcher-row .month-picker, .switcher-row .year-spin { order: 2; }
 }
+
+/* enrichment cards */
+.card-desc {
+  font-size: 12px;
+  color: var(--ink-soft);
+  line-height: 1.45;
+  margin-top: 2px;
+  font-style: italic;
+}
+.delta {
+  font-size: 11px;
+  color: var(--ink-soft);
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+.stack-bar {
+  display: flex;
+  height: 14px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--bg);
+}
+.seg-fixed { background: var(--accent); }
+.seg-disc { background: #94a3b8; }
+.stack-legend {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+.stack-legend .dot {
+  display: inline-block;
+  width: 10px; height: 10px;
+  border-radius: 2px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.dot.fixed { background: var(--accent); }
+.dot.disc { background: #94a3b8; }
 </style>

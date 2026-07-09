@@ -10,6 +10,7 @@ class Category(SQLModel, table=True):
     name_en: str
     name_zh: str | None = None
     budget_period: str = Field(default="monthly")  # 'monthly' | 'yearly' | 'none'
+    is_fixed: bool = Field(default=False)  # committed spend (rent/insurance/etc) vs discretionary
     valid_from: date
     valid_to: date | None = None  # NULL = active; exclusive end
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

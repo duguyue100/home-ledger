@@ -69,6 +69,11 @@ async function expireCategory(id: number) {
   reload(); bumpData()
 }
 
+async function toggleFixed(id: number, val: boolean) {
+  await api.patchCategory(id, { is_fixed: val })
+  reload(); bumpData()
+}
+
 async function reviveCategory(id: number) {
   await api.reviveCategory(id)
   reload(); bumpData()
@@ -172,6 +177,7 @@ const sortedRecur = computed(() =>
           <th>{{ t('settings.validFrom') }}</th>
           <th>{{ t('settings.validTo') }}</th>
           <th>{{ t('settings.status') }}</th>
+          <th class="num">{{ t('settings.fixed') }}</th>
           <th class="action"></th>
         </tr>
       </thead>
@@ -192,6 +198,11 @@ const sortedRecur = computed(() =>
             <span class="pill" :class="isExpired(c) ? 'expired' : 'active'">
               {{ isExpired(c) ? t('settings.expired') : t('settings.active') }}
             </span>
+          </td>
+          <td class="num" data-label="Fixed">
+            <input type="checkbox" :checked="c.is_fixed"
+                   @change="toggleFixed(c.id, ($event.target as HTMLInputElement).checked)"
+                   style="width:auto" />
           </td>
           <td class="action" data-label="">
             <div class="row-actions">

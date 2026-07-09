@@ -28,12 +28,14 @@ class CategoryCreate(BaseModel):
     name_en: str
     name_zh: str | None = None
     budget_period: str = "monthly"
+    is_fixed: bool = False
     valid_from: date
     valid_to: date | None = None
 
 
 class CategoryPatch(BaseModel):
     name_zh: str | None = None
+    is_fixed: bool | None = None
     valid_to: date | None = None  # set to expire
 
 
@@ -546,9 +548,19 @@ def report(
             "savings_rate_rolling": calc.savings_rate_rolling(
                 session, r.year, r.month, months=6 if not roll else roll
             ),
+            "deltas": calc.deltas(session, r.year, r.month),
+            "recurring_audit": calc.recurring_annualized(session),
+            "tag_breakdown": calc.tag_breakdown(session, s, e),
+            "savings_rate_stats": calc.savings_rate_stats(session, r.year, r.month),
+            "volatility": calc.spending_volatility(session, r.year, r.month),
+            "fixed_discretionary": calc.fixed_vs_discretionary(session, s, e),
         }
     # yearly
     s, e = calc.year_bounds(r.year)
+    # current-year stats anchor at today's month (avoids future-month zeros);
+    # past years anchor at December
+    today = date.today()
+    anchor_m = today.month if r.year == today.year else 12
     return {
         "period": "year",
         "ref": r,
@@ -561,4 +573,10 @@ def report(
             session, r.year, 12, months=12
         ),
         "monthly": calc.monthly_summaries(session, r.year),
+        "recurring_audit": calc.recurring_annualized(session),
+        "tag_breakdown": calc.tag_breakdown(session, s, e),
+        "savings_rate_stats": calc.savings_rate_stats(session, r.year, anchor_m),
+        "volatility": calc.spending_volatility(session, r.year, anchor_m),
+        "fixed_discretionary": calc.fixed_vs_discretionary(session, s, e),
+        "ytd_projection": calc.ytd_projection(session, r.year),
     }

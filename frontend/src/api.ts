@@ -76,6 +76,7 @@ export type Category = {
   name_en: string
   name_zh: string | null
   budget_period: 'monthly' | 'yearly' | 'none'
+  is_fixed: boolean
   valid_from: string
   valid_to: string | null
 }

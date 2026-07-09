@@ -3,12 +3,13 @@
 All money is integer CHF minor units. Borrowing entries are budget markers, never
 counted as spending (the overspend itself is already a `spending` transaction).
 """
+import statistics
 from datetime import date, timedelta
 
 from sqlalchemy import func
 from sqlmodel import Session, select
 
-from app.models import Budget, Category, Transaction
+from app.models import Budget, Category, Recurring, Transaction
 
 KINDS_INCOME = ("income",)
 KINDS_SPENDING = ("spending",)
@@ -284,4 +285,258 @@ def summary(session: Session, start: date, end: date) -> dict:
         "spending": spending,
         "investment": investment,
         "net": income - spending - investment,
+    }
+
+
+# ---- enrichment stats ----
+
+
+def _pct(cur: int | float, prev: int | float) -> float | None:
+    """Percentage change (cur-prev)/prev. None when prev is 0 (avoids div-by-zero)."""
+    if not prev:
+        return None
+    return (cur - prev) / prev
+
+
+def deltas(session: Session, year: int, month: int) -> dict:
+    """MoM and YoY pct change for income/spending/net.
+
+    Returns has_mom/has_yoy flags so the UI can hide missing comparisons.
+    """
+    cur_s, cur_e = month_bounds(year, month)
+    cur = summary(session, cur_s, cur_e)
+
+    py, pm = previous_month(year, month)
+    prev_s, prev_e = month_bounds(py, pm)
+    prev = summary(session, prev_s, prev_e)
+    has_mom = bool(prev["income"] or prev["spending"] or prev["investment"])
+
+    yoy_year = year - 1
+    yoy_s, yoy_e = month_bounds(yoy_year, month)
+    yoy = summary(session, yoy_s, yoy_e)
+    has_yoy = bool(yoy["income"] or yoy["spending"] or yoy["investment"])
+
+    return {
+        "mom": {
+            "income": _pct(cur["income"], prev["income"]),
+            "spending": _pct(cur["spending"], prev["spending"]),
+            "net": _pct(cur["net"], prev["net"]),
+        },
+        "yoy": {
+            "income": _pct(cur["income"], yoy["income"]),
+            "spending": _pct(cur["spending"], yoy["spending"]),
+            "net": _pct(cur["net"], yoy["net"]),
+        },
+        "has_mom": has_mom,
+        "has_yoy": has_yoy,
+    }
+
+
+def recurring_annualized(session: Session, on: date | None = None) -> dict:
+    """Annualized cost of active recurring templates (spending+borrowing only).
+
+    Excludes income (salary) and investment kinds — those aren't subscriptions.
+    """
+    on = on or date.today()
+    rows = session.exec(
+        select(Recurring)
+        .where(Recurring.kind.in_(("spending", "borrowing")))
+        .where(Recurring.valid_from <= on)
+        .where((Recurring.valid_to == None) | (Recurring.valid_to > on))  # noqa: E711
+        .order_by(Recurring.amount.desc())
+    ).all()
+    items = []
+    total = 0
+    for r in rows:
+        monthly = r.amount
+        annual = monthly * 12
+        total += annual
+        items.append({
+            "id": r.id,
+            "note": r.note_en or r.note_zh or "(no note)",
+            "monthly": monthly,
+            "annual": annual,
+            "kind": r.kind,
+        })
+    return {"total_annual": total, "count": len(items), "items": items}
+
+
+def tag_breakdown(session: Session, start: date, end: date) -> list[dict]:
+    """Spending grouped by tag, descending by total. Only non-null tags."""
+    rows = session.execute(
+        select(
+            Transaction.tag,
+            func.coalesce(func.sum(Transaction.amount), 0),
+            func.count(Transaction.id),
+        )
+        .where(Transaction.kind.in_(KINDS_SPENDING))
+        .where(Transaction.occurred_on >= start)
+        .where(Transaction.occurred_on < end)
+        .where(Transaction.tag != None)  # noqa: E711
+        .where(Transaction.tag != "")
+        .group_by(Transaction.tag)
+        .order_by(func.sum(Transaction.amount).desc())
+    ).all()
+    return [{"tag": r[0], "total": int(r[1]), "count": int(r[2])} for r in rows]
+
+
+def savings_rate_stats(
+    session: Session, year: int, month: int, target: float = 0.30, months: int = 12
+) -> dict:
+    """Trailing-N savings-rate benchmarks: current/median/best/worst + months above target."""
+    rates: list[float] = []
+    y, m = year, month
+    current: float | None = None
+    for i in range(months):
+        r = savings_rate(session, y, m)
+        if r is not None:
+            rates.append(r)
+            if i == 0:
+                current = r
+        y, m = previous_month(y, m)
+    if not rates:
+        return {
+            "current": None, "median": None, "best": None, "worst": None,
+            "months_above_target": 0, "months_with_data": 0, "target": target,
+        }
+    return {
+        "current": current,
+        "median": statistics.median(rates),
+        "best": max(rates),
+        "worst": min(rates),
+        "months_above_target": sum(1 for r in rates if r >= target),
+        "months_with_data": len(rates),
+        "target": target,
+    }
+
+
+def spending_volatility(
+    session: Session, year: int, month: int, months: int = 12
+) -> dict:
+    """Trailing-N monthly spending stats: mean/std/cv/min/max.
+
+    CV (coefficient of variation) = std/mean. Lower = more predictable life.
+    Uses population std (pstdev) since the window IS the full population of interest.
+    """
+    totals: list[int] = []
+    y, m = year, month
+    for _ in range(months):
+        s, e = month_bounds(y, m)
+        totals.append(_sum_amounts(session, KINDS_SPENDING, s, e))
+        y, m = previous_month(y, m)
+    # drop trailing zero months (no data yet) from the END only — keep leading zeros
+    # (real zero-spend months within tracked history)
+    while totals and totals[-1] == 0:
+        totals.pop()
+    if not totals:
+        return {"mean": 0, "std": 0, "cv": 0, "min": 0, "max": 0, "months": 0}
+    mean = statistics.mean(totals)
+    std = statistics.pstdev(totals)
+    cv = std / mean if mean else 0
+    return {
+        "mean": int(mean),
+        "std": int(std),
+        "cv": cv,
+        "min": min(totals),
+        "max": max(totals),
+        "months": len(totals),
+    }
+
+
+def fixed_vs_discretionary(session: Session, start: date, end: date) -> dict:
+    """Split spending into fixed (committed) vs discretionary, by Category.is_fixed."""
+    rows = session.execute(
+        select(
+            Category.is_fixed,
+            func.coalesce(func.sum(Transaction.amount), 0),
+        )
+        .join(Category, Category.id == Transaction.category_id)
+        .where(Transaction.kind.in_(KINDS_SPENDING))
+        .where(Transaction.occurred_on >= start)
+        .where(Transaction.occurred_on < end)
+        .group_by(Category.is_fixed)
+    ).all()
+    fixed = 0
+    disc = 0
+    for is_fixed, total in rows:
+        if is_fixed:
+            fixed += int(total)
+        else:
+            disc += int(total)
+    total = fixed + disc
+    return {
+        "fixed": fixed,
+        "discretionary": disc,
+        "total": total,
+        "fixed_pct": fixed / total if total else 0,
+        "disc_pct": disc / total if total else 0,
+    }
+
+
+def ytd_projection(session: Session, year: int) -> dict:
+    """Year-to-date annualized projection + per-category status vs yearly budget.
+
+    months_elapsed = months from start of year through today's month (caps at
+    12 for past years, so projected_annual == actual spend for complete years).
+    A month with zero spend still counts as elapsed — life can have quiet months.
+    """
+    ys, ye = year_bounds(year)
+    spent_ytd = _sum_amounts(session, KINDS_SPENDING, ys, ye)
+    today = date.today()
+    if today.year > year:
+        months_elapsed = 12  # past year, fully elapsed
+    elif today.year == year:
+        months_elapsed = max(1, today.month)  # current year, through this month
+    else:
+        months_elapsed = 0  # future year, no data
+    is_complete = months_elapsed == 12
+    projected_annual = spent_ytd * 12 // months_elapsed if months_elapsed else spent_ytd
+
+    cats = session.exec(
+        select(Category)
+        .where(Category.budget_period != "none")
+        .where((Category.valid_to == None) | (Category.valid_to > ys))  # noqa: E711
+        .where(Category.valid_from < ye)
+        .order_by(Category.name_en)
+    ).all()
+    by_category = []
+    for c in cats:
+        kinds = (KINDS_SPENDING + KINDS_INVESTMENT) if c.budget_period == "yearly" else KINDS_SPENDING
+        spent = _sum_amounts(session, kinds, ys, ye, c.id)
+        projected = spent * 12 // months_elapsed if months_elapsed else spent
+        # yearly budget total (mirror budget_vs_actual_year logic)
+        budget_total = 0
+        last_b = 0
+        months_active = 0
+        for m in range(1, 13):
+            on_m = date(year, m, 1)
+            if c.valid_from > on_m:
+                continue
+            b = budget_as_of(session, c.id, on_m)
+            if b is None:
+                continue
+            months_active += 1
+            last_b = b
+            if c.budget_period != "yearly":
+                budget_total += b
+        if c.budget_period == "yearly" and months_active:
+            budget_total = last_b * months_active // 12
+        if not budget_total:
+            continue
+        ratio = projected / budget_total if budget_total else 0
+        status = "over" if ratio > 1.1 else "at-risk" if ratio > 1.0 else "on-track"
+        by_category.append({
+            "name_en": c.name_en,
+            "name_zh": c.name_zh or c.name_en,
+            "spent": spent,
+            "projected": projected,
+            "budget": budget_total,
+            "status": status,
+        })
+    return {
+        "spent_ytd": spent_ytd,
+        "months_elapsed": months_elapsed,
+        "projected_annual": projected_annual,
+        "is_complete": is_complete,
+        "by_category": by_category,
     }
