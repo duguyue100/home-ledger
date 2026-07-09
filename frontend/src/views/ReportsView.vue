@@ -57,7 +57,7 @@ async function load() {
       ? nextMonth(monthStr.value)
       : `${yearNum.value + 1}-01-01`
     const r = await api.transactions({ from, to, limit: 1000 })
-    top5.value = [...r].sort((a, b) => b.amount - a.amount).slice(0, 5)
+    top5.value = [...r].filter((t) => t.kind === 'spending').sort((a, b) => b.amount - a.amount).slice(0, 5)
   } catch (e: any) {
     err.value = e.message
   } finally {
