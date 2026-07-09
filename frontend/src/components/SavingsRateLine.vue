@@ -2,6 +2,7 @@
 import { onMounted, ref, watch } from 'vue'
 import Chart from 'chart.js/auto'
 import { api } from '../api'
+import { i18n } from '../i18n'
 import { dataVersion } from '../composables/useDataVersion'
 import { fmtDate } from '../format'
 
@@ -61,6 +62,7 @@ function render() {
 onMounted(load)
 watch(() => [props.endYear, props.endMonth, props.months].join('|'), load)
 watch(dataVersion, load)
+watch(() => i18n.global.locale.value, render)
 </script>
 
 <template>
