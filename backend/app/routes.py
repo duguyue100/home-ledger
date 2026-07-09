@@ -128,6 +128,22 @@ def patch_category(cid: int, body: CategoryPatch, session: Session = Depends(get
     return c
 
 
+@router.delete("/categories/{cid}")
+def delete_category(cid: int, session: Session = Depends(get_session)):
+    c = session.get(Category, cid)
+    if not c:
+        raise HTTPException(404, "category not found")
+    if session.exec(select(Transaction).where(Transaction.category_id == cid)).first():
+        raise HTTPException(409, "category has transactions; cannot delete")
+    if session.exec(select(Recurring).where(Recurring.category_id == cid)).first():
+        raise HTTPException(409, "category in use by a recurring; remove it first")
+    for b in session.exec(select(Budget).where(Budget.category_id == cid)).all():
+        session.delete(b)
+    session.delete(c)
+    session.commit()
+    return {"ok": True}
+
+
 @router.post("/categories/bulk")
 def bulk_categories(items: list[CategoryCreate], session: Session = Depends(get_session)):
     created = updated = 0
@@ -180,6 +196,16 @@ def create_budget(body: BudgetCreate, session: Session = Depends(get_session)):
     return b
 
 
+@router.delete("/budgets/{bid}")
+def delete_budget(bid: int, session: Session = Depends(get_session)):
+    b = session.get(Budget, bid)
+    if not b:
+        raise HTTPException(404, "budget not found")
+    session.delete(b)
+    session.commit()
+    return {"ok": True}
+
+
 @router.post("/budgets/bulk")
 def bulk_budgets(items: list[BudgetCreate], session: Session = Depends(get_session)):
     created = updated = 0
@@ -219,6 +245,22 @@ def create_recurring(body: RecurringCreate, session: Session = Depends(get_sessi
     return r
 
 
+class RecurringPatch(BaseModel):
+    valid_to: date | None = None
+
+
+@router.patch("/recurring/{rid}")
+def patch_recurring(rid: int, body: RecurringPatch, session: Session = Depends(get_session)):
+    r = session.get(Recurring, rid)
+    if not r:
+        raise HTTPException(404, "recurring not found")
+    r.valid_to = body.valid_to
+    session.add(r)
+    session.commit()
+    session.refresh(r)
+    return r
+
+
 @router.post("/recurring/{rid}/materialize")
 def materialize(rid: int, on: date, amount_override: int | None = None,
                 session: Session = Depends(get_session)):
@@ -250,6 +292,54 @@ def materialize(rid: int, on: date, amount_override: int | None = None,
     session.commit()
     session.refresh(t)
     return t
+
+
+@router.delete("/recurring/{rid}")
+def delete_recurring(rid: int, session: Session = Depends(get_session)):
+    r = session.get(Recurring, rid)
+    if not r:
+        raise HTTPException(404, "recurring not found")
+    for t in session.exec(select(Transaction).where(Transaction.source_recurring_id == rid)).all():
+        t.source_recurring_id = None
+        session.add(t)
+    session.delete(r)
+    session.commit()
+    return {"ok": True}
+
+
+@router.post("/recurring/materialize-due")
+def materialize_due(on: date, session: Session = Depends(get_session)):
+    """Post all active recurring templates due for the month of `on` that
+    haven't already been materialized that month."""
+    s, e = calc.month_bounds(on.year, on.month)
+    recurrings = session.exec(
+        select(Recurring)
+        .where(Recurring.valid_from <= on)
+        .where((Recurring.valid_to == None) | (Recurring.valid_to > on))  # noqa: E711
+    ).all()
+    posted: list[int] = []
+    for r in recurrings:
+        if on < r.valid_from:
+            continue
+        dup = session.exec(
+            select(Transaction).where(Transaction.source_recurring_id == r.id)
+            .where(Transaction.occurred_on >= s).where(Transaction.occurred_on < e)
+        ).first()
+        if dup:
+            continue
+        t = Transaction(
+            occurred_on=on,
+            kind=r.kind,
+            category_id=r.category_id,
+            amount=r.amount,
+            currency=r.currency,
+            source_recurring_id=r.id,
+            note=r.note_en,
+        )
+        session.add(t)
+        posted.append(r.id)
+    session.commit()
+    return {"posted": posted}
 
 
 @router.post("/recurring/bulk")

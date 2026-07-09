@@ -27,14 +27,26 @@ export const api = {
   patchTxn: (id: number, t: any) => req(`/transactions/${id}`, { method: 'PATCH', body: JSON.stringify(t) }),
   deleteTxn: (id: number) => req(`/transactions/${id}`, { method: 'DELETE' }),
   categories: () => req('/categories?active_only=true'),
+  allCategories: () => req('/categories'),
   createCategory: (c: any) => req('/categories', { method: 'POST', body: JSON.stringify(c) }),
   patchCategory: (id: number, c: any) => req(`/categories/${id}`, { method: 'PATCH', body: JSON.stringify(c) }),
+  deleteCategory: (id: number) => req(`/categories/${id}`, { method: 'DELETE' }),
+  reviveCategory: (id: number) =>
+    req(`/categories/${id}`, { method: 'PATCH', body: JSON.stringify({ valid_to: null }) }),
   budgets: (categoryId: number) => req(`/budgets?category_id=${categoryId}`),
+  allBudgets: () => req('/budgets'),
   createBudget: (b: any) => req('/budgets', { method: 'POST', body: JSON.stringify(b) }),
+  deleteBudget: (id: number) => req(`/budgets/${id}`, { method: 'DELETE' }),
   recurring: () => req('/recurring?active_only=true'),
+  allRecurring: () => req('/recurring'),
   createRecurring: (r: any) => req('/recurring', { method: 'POST', body: JSON.stringify(r) }),
+  deleteRecurring: (id: number) => req(`/recurring/${id}`, { method: 'DELETE' }),
+  patchRecurring: (id: number, r: any) => req(`/recurring/${id}`, { method: 'PATCH', body: JSON.stringify(r) }),
+  reviveRecurring: (id: number) =>
+    req(`/recurring/${id}`, { method: 'PATCH', body: JSON.stringify({ valid_to: null }) }),
   materialize: (id: number, on: string, amountOverride?: number) =>
     req(`/recurring/${id}/materialize?on=${on}` + (amountOverride ? `&amount_override=${amountOverride}` : ''), { method: 'POST' }),
+  materializeDue: (on: string) => req(`/recurring/materialize-due?on=${on}`, { method: 'POST' }),
   summary: (period: string, d: string) => req(`/summary?period=${period}&d=${d}`),
   breakdown: (from: string, to: string) => req(`/breakdown?from=${from}&to=${to}`),
   budgetVsActual: (y: number, m: number) => req(`/budget-vs-actual?year=${y}&month=${m}`),
@@ -66,4 +78,25 @@ export type Category = {
   budget_period: 'monthly' | 'yearly' | 'none'
   valid_from: string
   valid_to: string | null
+}
+
+export type Budget = {
+  id: number
+  category_id: number
+  amount: number
+  valid_from: string
+  valid_to: string | null
+}
+
+export type Recurring = {
+  id: number
+  kind: string
+  category_id: number | null
+  amount: number
+  currency: string
+  day_of_month: number
+  valid_from: string
+  valid_to: string | null
+  note_en: string | null
+  note_zh: string | null
 }

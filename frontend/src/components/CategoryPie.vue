@@ -9,8 +9,8 @@ const canvas = ref<HTMLCanvasElement | null>(null)
 let chart: Chart | null = null
 
 const PALETTE = [
-  '#2d6a4f', '#40916c', '#52b788', '#74c69d', '#95d5b2',
-  '#b8860b', '#d4a017', '#b4362c', '#c9585a', '#6b6b6b',
+  '#0f766e', '#1e3a8a', '#b45309', '#7c2d12', '#4a044e',
+  '#1f2937', '#0e7490', '#9f1239', '#365314', '#5b21b6',
 ]
 
 function labelOf(r: any): string {

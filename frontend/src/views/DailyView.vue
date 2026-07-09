@@ -19,7 +19,7 @@ const kinds = ref<Record<string, boolean>>({ spending: true, income: true, inves
 const categoryId = ref<number | null>(null)
 const tag = ref('')
 const q = ref('')
-const days = ref(10)
+const days = ref(30)
 
 function isoDaysAgo(n: number): string {
   const d = new Date()
@@ -51,7 +51,7 @@ function resetFilters() {
   categoryId.value = null
   tag.value = ''
   q.value = ''
-  days.value = 10
+  days.value = 30
 }
 </script>
 

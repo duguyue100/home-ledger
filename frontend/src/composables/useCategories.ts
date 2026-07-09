@@ -3,10 +3,12 @@ import { api, type Category } from '../api'
 import { dataVersion } from './useDataVersion'
 
 const cats = ref<Category[]>([])
+const catsAll = ref<Category[]>([])
 const loaded = ref(false)
 
 async function load() {
   cats.value = await api.categories()
+  catsAll.value = await api.allCategories()
   loaded.value = true
 }
 
@@ -14,7 +16,7 @@ watch(dataVersion, load)
 if (!loaded.value) load()
 
 export function useCategories() {
-  return { categories: cats, reload: load }
+  return { categories: cats, allCategories: catsAll, reload: load }
 }
 
 // bilingual name based on current locale

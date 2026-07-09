@@ -39,7 +39,7 @@ async function load() {
 function render() {
   if (!canvas.value || !rates.value.length) return
   const labels = rates.value.map((r) => fmtDate(r.month, { month: 'short', year: 'numeric' }))
-  const data = rates.value.map((r) => (r.rate == null ? null : r.rate * 100))
+  const data = rates.value.map((r) => (r.rate == null ? null : Math.round(r.rate * 1000) / 10))
   if (chart) {
     chart.data.labels = labels
     chart.data.datasets[0].data = data as any
@@ -48,12 +48,12 @@ function render() {
   }
   chart = new Chart(canvas.value, {
     type: 'line',
-    data: { labels, datasets: [{ data, borderColor: '#2d6a4f', backgroundColor: '#d8f3dc', fill: true, tension: 0.3, spanGaps: true }] },
+    data: { labels, datasets: [{ data, borderColor: '#0f766e', backgroundColor: 'rgba(15,118,110,0.12)', fill: true, tension: 0.3, spanGaps: true }] },
     options: {
       plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `${(c.parsed.y as number).toFixed(1)}%` } } },
       responsive: true,
       maintainAspectRatio: false,
-      scales: { y: { ticks: { callback: (v) => `${v}%` } } },
+      scales: { y: { ticks: { callback: (v) => `${Number(v).toFixed(1)}%` } } },
     },
   })
 }

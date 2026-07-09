@@ -79,7 +79,6 @@ const totalSpending = computed(() =>
   report.value?.breakdown.reduce((s: number, r: any) => s + r.total, 0) || 0
 )
 
-function printPage() { window.print() }
 function fmtMonthLabel(m: number): string {
   return fmtDate(`${anchorYear.value}-${String(m).padStart(2, '0')}-01`, { month: 'short' })
 }
@@ -90,19 +89,18 @@ function shiftYear(delta: number) {
 </script>
 
 <template>
-  <div class="row" style="margin-bottom: 16px; gap: 12px; flex-wrap: wrap">
+  <div class="switcher-row">
     <h1 style="font-size: 20px; margin: 0">{{ t('report.title') }}</h1>
-    <div class="seg no-print" role="tablist">
+    <div class="seg" role="tablist">
       <button :class="{ active: period === 'month' }" @click="period = 'month'">{{ t('report.month') }}</button>
       <button :class="{ active: period === 'year' }" @click="period = 'year'">{{ t('report.year') }}</button>
     </div>
-    <input v-if="period === 'month'" type="month" v-model="monthStr" />
+    <input v-if="period === 'month'" type="month" v-model="monthStr" class="month-picker" />
     <div v-else class="year-spin" role="group" :aria-label="t('report.year')">
       <button class="yr-btn" type="button" aria-label="Previous year" @click="shiftYear(-1)">‹</button>
       <span class="yr-val" style="font-variant-numeric: tabular-nums">{{ yearNum }}</span>
       <button class="yr-btn" type="button" aria-label="Next year" @click="shiftYear(1)">›</button>
     </div>
-    <button class="btn no-print" style="margin-left: auto" @click="printPage">{{ t('report.print') }}</button>
   </div>
 
   <div v-if="loading" class="empty">{{ t('common.loading') }}</div>
@@ -223,6 +221,10 @@ function shiftYear(delta: number) {
 </template>
 
 <style scoped>
+.switcher-row {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
+}
+
 .seg {
   display: inline-flex;
   border: 1px solid var(--line);
@@ -240,6 +242,13 @@ function shiftYear(delta: number) {
   background: var(--accent);
   color: #fff;
 }
+.month-picker {
+  width: auto; padding: 6px 10px; border: 1px solid var(--line);
+  border-radius: 8px; background: var(--surface); font-size: 14px;
+  min-width: 0;
+  -webkit-appearance: none; appearance: none;
+}
+.month-picker::-webkit-date-and-time-value { text-align: left; min-height: 1.4em; }
 .year-spin {
   display: inline-flex; align-items: center; gap: 6px;
   border: 1px solid var(--line); border-radius: 8px; background: var(--surface);
@@ -252,4 +261,10 @@ function shiftYear(delta: number) {
 }
 .yr-btn:hover { background: var(--accent-soft); color: var(--accent); }
 .yr-val { font-size: 14px; font-weight: 600; min-width: 40px; text-align: center; }
+
+@media (max-width: 640px) {
+  .switcher-row { flex-wrap: wrap; gap: 8px; }
+  .seg { order: 1; }
+  .switcher-row .month-picker, .switcher-row .year-spin { order: 2; }
+}
 </style>

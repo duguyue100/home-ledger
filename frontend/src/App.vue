@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { setLang } from './i18n'
+import { api } from './api'
+import { bumpData } from './composables/useDataVersion'
 import Logo from './components/Logo.vue'
 
 const { t, locale } = useI18n()
@@ -10,6 +12,16 @@ function toggle(l: 'en' | 'zh-CN') {
   lang.value = l
   setLang(l)
 }
+
+// auto-post any recurring templates due for the current month whenever the app loads.
+// dup-guarded per-month on the backend, so calling repeatedly is a no-op once posted.
+onMounted(async () => {
+  try {
+    const today = new Date().toISOString().slice(0, 10)
+    const r = await api.materializeDue(today)
+    if (r?.posted?.length) bumpData()
+  } catch { /* ignore — best-effort, e.g. transient network */ }
+})
 </script>
 
 <template>
