@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { api } from '../api'
 import { dataVersion } from '../composables/useDataVersion'
 import { i18n } from '../i18n'
-import { useCategories, categoryName, findCategory } from '../composables/useCategories'
+import { useCategories, categoryName } from '../composables/useCategories'
 import { money, percent, fmtDate } from '../format'
 import CategoryPie from '../components/CategoryPie.vue'
 import SavingsRateLine from '../components/SavingsRateLine.vue'
@@ -41,7 +41,6 @@ const anchorMonth = computed(() =>
 )
 
 const report = ref<any>(null)
-const top5 = ref<any[]>([])
 const loading = ref(false)
 const err = ref<string | null>(null)
 
@@ -50,26 +49,11 @@ async function load() {
   err.value = null
   try {
     report.value = await api.report(refIso.value, period.value)
-    const from = period.value === 'month'
-      ? `${monthStr.value}-01`
-      : `${yearNum.value}-01-01`
-    const to = period.value === 'month'
-      ? nextMonth(monthStr.value)
-      : `${yearNum.value + 1}-01-01`
-    const r = await api.transactions({ from, to, limit: 1000 })
-    top5.value = [...r].filter((t) => t.kind === 'spending').sort((a, b) => b.amount - a.amount).slice(0, 5)
   } catch (e: any) {
     err.value = e.message
   } finally {
     loading.value = false
   }
-}
-
-function nextMonth(ym: string): string {
-  const [y, m] = ym.split('-').map(Number)
-  const ny = m === 12 ? y + 1 : y
-  const nm = m === 12 ? 1 : m + 1
-  return `${ny}-${String(nm).padStart(2, '0')}-01`
 }
 
 watch([period, monthStr, yearNum], load, { immediate: true })
@@ -199,23 +183,6 @@ function shiftYear(delta: number) {
           </tr>
         </tbody>
       </table>
-    </div>
-
-    <!-- top 5 -->
-    <div class="card" style="margin-top: 16px">
-      <div class="section-title">{{ t('report.top5') }}</div>
-      <div v-if="!top5.length" class="empty">—</div>
-      <div v-for="txn in top5" :key="txn.id" class="txn-card" style="margin-top: 0">
-        <span class="kind-dot" :class="txn.kind"></span>
-        <div>
-          <div class="note">{{ txn.note || t(`kind.${txn.kind}`) }}</div>
-          <div class="cat">
-            {{ categoryName(findCategory(txn.category_id), locale as string) }}
-            <span class="muted">· {{ fmtDate(txn.occurred_on, { day: 'numeric', month: 'short', year: 'numeric' }) }}</span>
-          </div>
-        </div>
-        <div class="amount" :class="txn.kind" style="margin-left: auto">{{ money(txn.amount) }}</div>
-      </div>
     </div>
   </div>
 </template>

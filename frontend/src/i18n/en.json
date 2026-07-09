@@ -30,7 +30,15 @@
     "lastDays": "Last {n} days",
     "noteSearch": "Note search",
     "windowDays": "Window (days)",
-    "all": "all"
+    "all": "all",
+    "sortBy": "Sort by",
+    "sort": {
+      "date": "Date",
+      "amount": "Amount",
+      "category": "Category",
+      "kind": "Kind",
+      "reset": "Reset sort"
+    }
   },
   "report": {
     "title": "Reports",
@@ -48,7 +56,6 @@
     "share": "Share",
     "budgetVsActual": "Budget vs actual",
     "budgetVsActualYear": "Budget vs actual (year to date)",
-    "top5": "Top 5 spending",
     "monthlyBreakdown": "Monthly breakdown"
   },
   "budget": {

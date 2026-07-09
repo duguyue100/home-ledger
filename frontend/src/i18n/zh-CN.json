@@ -30,7 +30,15 @@
     "lastDays": "最近 {n} 天",
     "noteSearch": "备注搜索",
     "windowDays": "时间窗口（天）",
-    "all": "全部"
+    "all": "全部",
+    "sortBy": "排序",
+    "sort": {
+      "date": "日期",
+      "amount": "金额",
+      "category": "类别",
+      "kind": "类型",
+      "reset": "重置排序"
+    }
   },
   "report": {
     "title": "报告",
@@ -48,7 +56,6 @@
     "share": "占比",
     "budgetVsActual": "预算与实际",
     "budgetVsActualYear": "预算与实际（年初至今）",
-    "top5": "支出前 5 笔",
     "monthlyBreakdown": "月度明细"
   },
   "budget": {
